@@ -1,0 +1,175 @@
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 应用根容器 */
+#root {
+  min-height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+/* 确保body和html占满全屏 */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  overflow-x: auto;
+}
+
+/* 强制全宽样式 */
+* {
+  max-width: none !important;
+}
+
+.MuiContainer-root, 
+.MuiContainer-maxWidthXl,
+.MuiContainer-maxWidthLg,
+.MuiContainer-maxWidthMd,
+.MuiContainer-maxWidthSm {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+/* 确保Grid系统使用全宽 */
+.MuiGrid-container {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 卡片阴影动画 */
+.MuiCard-root {
+  transition: box-shadow 0.3s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.MuiCard-root:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+}
+
+/* 按钮波纹效果 */
+.MuiButton-root {
+  transition: all 0.3s ease;
+}
+
+/* 表格行悬停效果 */
+.MuiTableRow-root:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 加载动画 */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.loading-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 渐入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* 桌面端优化 - 充满全屏 */
+@media (min-width: 1200px) {
+  .MuiContainer-root {
+    max-width: none !important;
+    width: 100% !important;
+    padding-left: 48px !important;
+    padding-right: 48px !important;
+  }
+}
+
+/* 大屏幕优化 - 更大边距 */
+@media (min-width: 1600px) {
+  .MuiContainer-root {
+    padding-left: 64px !important;
+    padding-right: 64px !important;
+  }
+}
+
+/* 超大屏幕优化 */
+@media (min-width: 2000px) {
+  .MuiContainer-root {
+    padding-left: 80px !important;
+    padding-right: 80px !important;
+  }
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .MuiContainer-root {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  
+  .MuiCard-root {
+    margin-bottom: 16px;
+  }
+}
+
+/* 成功状态颜色 */
+.status-success {
+  color: #2e7d32;
+}
+
+/* 警告状态颜色 */
+.status-warning {
+  color: #ed6c02;
+}
+
+/* 错误状态颜色 */
+.status-error {
+  color: #d32f2f;
+}
+
+/* 地址字体 */
+.address-font {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+}
