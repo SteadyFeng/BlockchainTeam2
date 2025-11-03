@@ -78,10 +78,16 @@ export const getContract = (contractName, withSigner = false) => {
 
 // 医院账单相关函数
 export const submitBill = async (citizen, serviceCode, amount, docHash) => {
-  const contract = getContract('HOSPITAL_BILL', true);
-  const amountWei = ethers.parseEther(amount.toString());
-  const tx = await contract.submitBill(citizen, serviceCode, amountWei, docHash);
-  return await tx.wait();
+  try {
+    const contract = getContract('HOSPITAL_BILL', true);
+    const amountWei = ethers.parseEther(amount.toString());
+    const tx = await contract.submitBill(citizen, serviceCode, amountWei, docHash);
+    const receipt = await tx.wait();
+    
+    return handleTransactionReceipt(receipt);
+  } catch (error) {
+    throw new Error(handleContractError(error, 'submit bill'));
+  }
 };
 
 export const getBill = async (billId) => {
@@ -136,24 +142,36 @@ export const getBillsDetails = async (billIds) => {
 
 // 保险注册相关函数
 export const registerCitizen = async (citizenAddress, planId) => {
-  const contract = getContract('INSURANCE_REGISTRY', true);
-  const tx = await contract.registerCitizen(citizenAddress, planId);
-  return await tx.wait();
+  try {
+    const contract = getContract('INSURANCE_REGISTRY', true);
+    const tx = await contract.registerCitizen(citizenAddress, planId);
+    const receipt = await tx.wait();
+    
+    return handleTransactionReceipt(receipt);
+  } catch (error) {
+    throw new Error(handleContractError(error, 'register citizen'));
+  }
 };
 
 export const setPlan = async (planId, copayBps, deductible, coverageLimit) => {
-  const contract = getContract('INSURANCE_REGISTRY', true);
-  const deductibleWei = ethers.parseEther(deductible.toString());
-  const coverageLimitWei = ethers.parseEther(coverageLimit.toString());
-  
-  const plan = {
-    copayBps,
-    deductible: deductibleWei,
-    coverageLimit: coverageLimitWei
-  };
-  
-  const tx = await contract.setPlan(planId, plan);
-  return await tx.wait();
+  try {
+    const contract = getContract('INSURANCE_REGISTRY', true);
+    const deductibleWei = ethers.parseEther(deductible.toString());
+    const coverageLimitWei = ethers.parseEther(coverageLimit.toString());
+    
+    const plan = {
+      copayBps,
+      deductible: deductibleWei,
+      coverageLimit: coverageLimitWei
+    };
+    
+    const tx = await contract.setPlan(planId, plan);
+    const receipt = await tx.wait();
+    
+    return handleTransactionReceipt(receipt);
+  } catch (error) {
+    throw new Error(handleContractError(error, 'create plan'));
+  }
 };
 
 export const getPlanOf = async (citizenAddress) => {
@@ -177,16 +195,28 @@ export const getTotalPaid = async (citizenAddress) => {
 
 // 处理报销
 export const processReimbursement = async (billId) => {
-  const contract = getContract('REIMBURSEMENT', true);
-  const tx = await contract.processReimbursement(billId);
-  return await tx.wait();
+  try {
+    const contract = getContract('REIMBURSEMENT', true);
+    const tx = await contract.processReimbursement(billId);
+    const receipt = await tx.wait();
+    
+    return handleTransactionReceipt(receipt);
+  } catch (error) {
+    throw new Error(handleContractError(error, 'process reimbursement'));
+  }
 };
 
 // 拒绝报销
 export const rejectReimbursement = async (billId, reason) => {
-  const contract = getContract('REIMBURSEMENT', true);
-  const tx = await contract.rejectReimbursement(billId, reason);
-  return await tx.wait();
+  try {
+    const contract = getContract('REIMBURSEMENT', true);
+    const tx = await contract.rejectReimbursement(billId, reason);
+    const receipt = await tx.wait();
+    
+    return handleTransactionReceipt(receipt);
+  } catch (error) {
+    throw new Error(handleContractError(error, 'reject reimbursement'));
+  }
 };
 
 // 权限检查函数
@@ -197,6 +227,49 @@ export const hasRole = async (contractName, role, address = null) => {
   const contract = getContract(contractName);
   const account = address || await getCurrentAccount();
   return await contract.hasRole(role, account);
+};
+
+// 处理 ethers v6 交易回执的通用函数
+export const handleTransactionReceipt = (receipt) => {
+  if (!receipt) {
+    throw new Error('Transaction failed: No receipt received');
+  }
+  
+  return {
+    ...receipt,
+    transactionHash: receipt.hash || receipt.transactionHash,
+    status: receipt.status === 1 ? 'success' : 'failed',
+    blockNumber: receipt.blockNumber ? receipt.blockNumber.toString() : '0',
+    gasUsed: receipt.gasUsed ? receipt.gasUsed.toString() : '0'
+  };
+};
+
+// 通用错误处理函数
+export const handleContractError = (error, operation) => {
+  console.error(`Error in ${operation}:`, error);
+  
+  // 处理常见的错误类型
+  if (error.code === 'INVALID_ARGUMENT') {
+    return `Invalid argument provided: ${error.argument || 'unknown'}`;
+  }
+  
+  if (error.code === 'BAD_DATA') {
+    return `Transaction data error. Please try again.`;
+  }
+  
+  if (error.message?.includes('user rejected')) {
+    return `Transaction was rejected by user`;
+  }
+  
+  if (error.message?.includes('insufficient funds')) {
+    return `Insufficient funds to complete transaction`;
+  }
+  
+  if (error.message?.includes('AccessControl:')) {
+    return `Access denied: You don't have permission to perform this action`;
+  }
+  
+  return `Failed to ${operation}: ${error.message || error.reason || 'Unknown error'}`;
 };
 
 // 格式化地址显示
