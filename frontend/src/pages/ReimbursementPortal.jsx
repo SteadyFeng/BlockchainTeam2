@@ -37,7 +37,11 @@ import {
 import { useWeb3 } from '../contexts/Web3Context';
 import { 
   processReimbursement, 
+  rejectReimbursement,
   getBill, 
+  getBillsByStatus,
+  getAllBills,
+  getBillsDetails,
   getPlanOf, 
   getTotalPaid,
   hasRole, 
@@ -61,6 +65,14 @@ const ReimbursementPortal = () => {
   const [citizenInfo, setCitizenInfo] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reimbursementHistory, setReimbursementHistory] = useState([]);
+  
+  // 新增：所有账单列表
+  const [allBills, setAllBills] = useState([]);
+  const [loadingBills, setLoadingBills] = useState(false);
+
+  // 新增：拒绝报销相关状态
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   // 检查用户权限
   const checkPermissions = async () => {
@@ -75,6 +87,33 @@ const ReimbursementPortal = () => {
       setError('Failed to check permissions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 获取所有账单列表
+  const fetchAllBills = async () => {
+    try {
+      setLoadingBills(true);
+      setError(null);
+      
+      // 获取所有账单ID列表
+      const allBillIds = await getAllBills();
+      
+      if (allBillIds.length === 0) {
+        setAllBills([]);
+        return;
+      }
+      
+      // 获取账单详情
+      const billsDetails = await getBillsDetails(allBillIds);
+      setAllBills(billsDetails);
+      
+    } catch (err) {
+      console.error('Error fetching all bills:', err);
+      setError('Failed to load bills');
+      setAllBills([]);
+    } finally {
+      setLoadingBills(false);
     }
   };
 
@@ -111,6 +150,12 @@ const ReimbursementPortal = () => {
   const handleProcessReimbursement = async () => {
     if (!billDetails) return;
 
+    // 检查账单状态，防止重复处理
+    if (billDetails.status !== 0) {
+      setError('This bill has already been processed and cannot be processed again.');
+      return;
+    }
+
     try {
       setProcessing(true);
       setError(null);
@@ -118,15 +163,73 @@ const ReimbursementPortal = () => {
       const tx = await processReimbursement(billDetails.id);
       setSuccess(`Reimbursement processed successfully! Transaction hash: ${tx.transactionHash}`);
       
-      // 刷新账单详情和余额
+      // 刷新账单详情、余额和待处理账单列表
       await fetchBillDetails(billDetails.id.toString());
       await updateBalances();
+      await fetchAllBills(); // 刷新账单列表
       
     } catch (err) {
       console.error('Error processing reimbursement:', err);
       setError(err.message);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // 处理拒绝报销
+  const handleRejectReimbursement = async () => {
+    if (!billDetails || !rejectReason.trim()) return;
+
+    // 检查账单状态，防止重复处理
+    if (billDetails.status !== 0) {
+      setError('This bill has already been processed and cannot be rejected again.');
+      setRejectDialogOpen(false);
+      setRejectReason('');
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setError(null);
+
+      const tx = await rejectReimbursement(billDetails.id, rejectReason);
+      setSuccess(`Reimbursement rejected successfully! Transaction hash: ${tx.transactionHash}`);
+      
+      // 关闭拒绝对话框并清空原因
+      setRejectDialogOpen(false);
+      setRejectReason('');
+      
+      // 刷新账单详情、余额和待处理账单列表
+      await fetchBillDetails(billDetails.id.toString());
+      await updateBalances();
+      await fetchAllBills(); // 刷新账单列表
+      
+    } catch (err) {
+      console.error('Error rejecting reimbursement:', err);
+      setError(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 从待处理账单列表中选择账单
+  const handleSelectBill = async (bill) => {
+    setBillId(bill.id);
+    setBillDetails(bill);
+    
+    // 获取公民保险信息
+    try {
+      const planInfo = await getPlanOf(bill.citizen);
+      const totalPaid = await getTotalPaid(bill.citizen);
+      setCitizenInfo({
+        address: bill.citizen,
+        planId: planInfo.planId,
+        plan: planInfo.plan,
+        totalPaid
+      });
+    } catch (err) {
+      setCitizenInfo(null);
+      console.warn('Citizen not registered for insurance:', err);
     }
   };
 
@@ -180,9 +283,12 @@ const ReimbursementPortal = () => {
 
   useEffect(() => {
     checkPermissions();
-  }, [isConnected, account]);
+    if (isConnected && isAdmin) {
+      fetchAllBills();
+    }
+  }, [isConnected, account, isAdmin]);
 
-  // 监听报销事件
+  // 监听报销事件和账单状态变化
   useEffect(() => {
     if (!isConnected) return;
 
@@ -200,6 +306,12 @@ const ReimbursementPortal = () => {
         timestamp: new Date().toLocaleString(),
         status: 'Reimbursed'
       }]);
+
+      // 刷新账单列表和当前账单详情
+      fetchAllBills();
+      if (billDetails && billDetails.id.toString() === billId.toString()) {
+        fetchBillDetails(billId.toString());
+      }
     });
 
     const cleanupRejected = listenToEvents('REIMBURSEMENT', 'Rejected', (billId, citizen, reason) => {
@@ -216,13 +328,36 @@ const ReimbursementPortal = () => {
         timestamp: new Date().toLocaleString(),
         status: 'Rejected'
       }]);
+
+      // 刷新账单列表和当前账单详情
+      fetchAllBills();
+      if (billDetails && billDetails.id.toString() === billId.toString()) {
+        fetchBillDetails(billId.toString());
+      }
+    });
+
+    // 监听账单状态变化事件
+    const cleanupBillStatusChanged = listenToEvents('HOSPITAL_BILL', 'BillStatusChanged', (billId, newStatus) => {
+      console.log('Bill status changed:', { 
+        billId: billId.toString(), 
+        newStatus: newStatus.toString() 
+      });
+      
+      // 刷新账单列表
+      fetchAllBills();
+      
+      // 如果当前显示的账单状态发生变化，刷新账单详情
+      if (billDetails && billDetails.id.toString() === billId.toString()) {
+        fetchBillDetails(billId.toString());
+      }
     });
 
     return () => {
       cleanupReimbursed();
       cleanupRejected();
+      cleanupBillStatusChanged();
     };
-  }, [isConnected]);
+  }, [isConnected, billDetails, fetchAllBills, fetchBillDetails]);
 
   if (!isConnected) {
     return (
@@ -278,6 +413,96 @@ const ReimbursementPortal = () => {
       )}
 
       <Grid container spacing={3}>
+        {/* Pending Bills List */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">
+                  Bills for Reimbursement
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={fetchAllBills}
+                  disabled={loadingBills}
+                  startIcon={loadingBills ? <CircularProgress size={20} /> : null}
+                >
+                  {loadingBills ? 'Loading...' : 'Refresh'}
+                </Button>
+              </Box>
+              
+              {loadingBills ? (
+                <Box display="flex" justifyContent="center" p={3}>
+                  <CircularProgress />
+                </Box>
+              ) : allBills.length > 0 ? (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Bill ID</TableCell>
+                        <TableCell>Patient</TableCell>
+                        <TableCell>Service Code</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Action</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {allBills.map((bill) => (
+                        <TableRow 
+                          key={bill.id}
+                          hover
+                          sx={{ cursor: 'pointer' }}
+                          onClick={() => handleSelectBill(bill)}
+                        >
+                          <TableCell>#{bill.id}</TableCell>
+                          <TableCell>{formatAddress(bill.citizen)}</TableCell>
+                          <TableCell>{bill.serviceCode}</TableCell>
+                          <TableCell>{formatAmount(bill.amount / 1e18)} ETH</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={BILL_STATUS[bill.status]}
+                              color={BILL_STATUS_COLORS[bill.status]}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {bill.status === 0 ? (
+                              <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<Visibility />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectBill(bill);
+                                }}
+                              >
+                                Select
+                              </Button>
+                            ) : (
+                              <Chip
+                                label={bill.status === 1 ? "Processed" : "Rejected"}
+                                color={bill.status === 1 ? "success" : "error"}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Alert severity="info">
+                  No bills found. No bills have been submitted yet.
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* Bill Lookup */}
         <Grid item xs={12} md={6}>
           <Card>
@@ -339,20 +564,42 @@ const ReimbursementPortal = () => {
                 </Card>
               )}
 
-              {/* Process Button */}
-              {billDetails && billDetails.status === 0 && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  startIcon={processing ? <CircularProgress size={20} /> : <PlayArrow />}
-                  onClick={handleProcessReimbursement}
-                  disabled={processing}
-                  sx={{ mt: 2 }}
-                  fullWidth
-                >
-                  {processing ? 'Processing...' : 'Process Reimbursement'}
-                </Button>
+              {/* Process and Reject Buttons */}
+              {billDetails && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                  {billDetails.status === 0 ? (
+                    <>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        startIcon={processing ? <CircularProgress size={20} /> : <PlayArrow />}
+                        onClick={handleProcessReimbursement}
+                        disabled={processing}
+                        sx={{ flex: 1 }}
+                      >
+                        {processing ? 'Processing...' : 'Process Reimbursement'}
+                      </Button>
+                      
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="large"
+                        startIcon={<Cancel />}
+                        onClick={() => setRejectDialogOpen(true)}
+                        disabled={processing}
+                        sx={{ flex: 1 }}
+                      >
+                        Reject Bill
+                      </Button>
+                    </>
+                  ) : (
+                    <Alert severity="info" sx={{ width: '100%' }}>
+                      This bill has already been processed and cannot be processed again. 
+                      Status: {BILL_STATUS[billDetails.status]}
+                    </Alert>
+                  )}
+                </Box>
               )}
             </CardContent>
           </Card>
@@ -497,6 +744,53 @@ const ReimbursementPortal = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Reject Reimbursement Dialog */}
+      <Dialog 
+        open={rejectDialogOpen} 
+        onClose={() => setRejectDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Reject Reimbursement</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Please provide a reason for rejecting this reimbursement request:
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Rejection Reason"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Enter the reason for rejection..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setRejectDialogOpen(false);
+              setRejectReason('');
+            }}
+            disabled={processing}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleRejectReimbursement}
+            variant="contained"
+            color="error"
+            disabled={processing || !rejectReason.trim()}
+            startIcon={processing ? <CircularProgress size={20} /> : <Cancel />}
+          >
+            {processing ? 'Rejecting...' : 'Reject Bill'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

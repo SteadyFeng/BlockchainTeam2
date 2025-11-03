@@ -66,6 +66,10 @@ module.exports = async function (deployer, network, accounts) {
     await insuranceRegistry.grantRole(GOV_ROLE, accounts[1]);
     console.log(`✅ 政府管理员权限已授予: ${accounts[1]}`);
 
+    // 5.2.5 给报销合约授予政府权限（用于调用addPaid函数）
+    await insuranceRegistry.grantRole(GOV_ROLE, reimbursementContract.address);
+    console.log("✅ 报销合约已获得政府权限");
+
     // 5.3 配置医院管理员权限
     const HOSPITAL_ROLE = await hospitalBillContract.HOSPITAL_ROLE();
     await hospitalBillContract.grantRole(HOSPITAL_ROLE, accounts[2]);

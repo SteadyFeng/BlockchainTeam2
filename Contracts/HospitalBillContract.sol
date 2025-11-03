@@ -51,4 +51,39 @@ contract HospitalBillContract is AccessControl {
         bills[billId].status = BillStatus.Rejected;
         emit BillStatusChanged(billId, BillStatus.Rejected);
     }
+
+    // 获取账单总数
+    function getBillCount() external view returns (uint256) {
+        return bills.length;
+    }
+
+    // 获取指定状态的账单列表
+    function getBillsByStatus(BillStatus status) external view returns (uint256[] memory) {
+        uint256[] memory tempBills = new uint256[](bills.length);
+        uint256 count = 0;
+        
+        for (uint256 i = 0; i < bills.length; i++) {
+            if (bills[i].status == status) {
+                tempBills[count] = i;
+                count++;
+            }
+        }
+        
+        // 创建正确大小的数组
+        uint256[] memory result = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = tempBills[i];
+        }
+        
+        return result;
+    }
+
+    // 获取所有账单ID列表
+    function getAllBills() external view returns (uint256[] memory) {
+        uint256[] memory result = new uint256[](bills.length);
+        for (uint256 i = 0; i < bills.length; i++) {
+            result[i] = i;
+        }
+        return result;
+    }
 }

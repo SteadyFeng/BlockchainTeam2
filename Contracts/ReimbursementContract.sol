@@ -24,18 +24,21 @@ contract ReimbursementContract is AccessControl, ReentrancyGuard {
     function processReimbursement(uint256 billId) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
         HospitalBillContract.Bill memory bill = billContract.getBill(billId);
         if (bill.status != HospitalBillContract.BillStatus.Submitted) {
-            emit Rejected(billId, bill.citizen, "Invalid status");
+            // 不要修改已处理账单的状态，只发出事件
+            emit Rejected(billId, bill.citizen, "Invalid status - bill already processed");
             return;
         }
 
         (uint256 planId, InsuranceRegistry.Plan memory plan) = registry.getPlanOf(bill.citizen);
         if (plan.coverageLimit == 0) {
+            billContract.markRejected(billId);
             emit Rejected(billId, bill.citizen, "Citizen not registered");
             return;
         }
 
         uint256 paidSoFar = registry.totalPaid(bill.citizen);
         if (paidSoFar >= plan.coverageLimit) {
+            billContract.markRejected(billId);
             emit Rejected(billId, bill.citizen, "Coverage exhausted");
             return;
         }
@@ -54,6 +57,7 @@ contract ReimbursementContract is AccessControl, ReentrancyGuard {
         }
 
         if (payout == 0) {
+            billContract.markRejected(billId);
             emit Rejected(billId, bill.citizen, "Payout = 0");
             return;
         }
@@ -63,5 +67,16 @@ contract ReimbursementContract is AccessControl, ReentrancyGuard {
         billContract.markReimbursed(billId);
 
         emit Reimbursed(billId, bill.citizen, payout);
+    }
+
+    function rejectReimbursement(uint256 billId, string memory reason) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
+        HospitalBillContract.Bill memory bill = billContract.getBill(billId);
+        if (bill.status != HospitalBillContract.BillStatus.Submitted) {
+            emit Rejected(billId, bill.citizen, "Invalid status - bill not in submitted state");
+            return;
+        }
+
+        billContract.markRejected(billId);
+        emit Rejected(billId, bill.citizen, reason);
     }
 }

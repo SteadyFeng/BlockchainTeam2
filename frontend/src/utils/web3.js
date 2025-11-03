@@ -89,6 +89,51 @@ export const getBill = async (billId) => {
   return await contract.getBill(billId);
 };
 
+// 获取账单总数
+export const getBillCount = async () => {
+  const contract = getContract('HOSPITAL_BILL');
+  const count = await contract.getBillCount();
+  return count.toString();
+};
+
+// 获取指定状态的账单列表
+export const getBillsByStatus = async (status) => {
+  const contract = getContract('HOSPITAL_BILL');
+  const billIds = await contract.getBillsByStatus(status);
+  return billIds.map(id => id.toString());
+};
+
+// 获取所有账单列表
+export const getAllBills = async () => {
+  const contract = getContract('HOSPITAL_BILL');
+  const billIds = await contract.getAllBills();
+  return billIds.map(id => id.toString());
+};
+
+// 获取账单详情列表（批量）
+export const getBillsDetails = async (billIds) => {
+  const contract = getContract('HOSPITAL_BILL');
+  const bills = [];
+  
+  for (const billId of billIds) {
+    try {
+      const bill = await contract.getBill(billId);
+      bills.push({
+        id: billId,
+        citizen: bill.citizen,
+        serviceCode: bill.serviceCode.toString(),
+        amount: bill.amount.toString(),
+        docHash: bill.docHash,
+        status: parseInt(bill.status)
+      });
+    } catch (error) {
+      console.error(`Error fetching bill ${billId}:`, error);
+    }
+  }
+  
+  return bills;
+};
+
 // 保险注册相关函数
 export const registerCitizen = async (citizenAddress, planId) => {
   const contract = getContract('INSURANCE_REGISTRY', true);
@@ -130,10 +175,17 @@ export const getTotalPaid = async (citizenAddress) => {
   return ethers.formatEther(totalPaid);
 };
 
-// 报销相关函数
+// 处理报销
 export const processReimbursement = async (billId) => {
   const contract = getContract('REIMBURSEMENT', true);
   const tx = await contract.processReimbursement(billId);
+  return await tx.wait();
+};
+
+// 拒绝报销
+export const rejectReimbursement = async (billId, reason) => {
+  const contract = getContract('REIMBURSEMENT', true);
+  const tx = await contract.rejectReimbursement(billId, reason);
   return await tx.wait();
 };
 

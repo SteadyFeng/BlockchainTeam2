@@ -1,10 +1,10 @@
 // 合约ABI和地址配置
 export const CONTRACT_ADDRESSES = {
-  // 正确的合约地址映射 (2025-11-01 修复)
-  GOVSTABLE: "0xae674a265726C81443040031069D92F2Fc4D4b48",
-  INSURANCE_REGISTRY: "0x536C72c7BA165C80d07dD1472E7058ce95436624",
-  HOSPITAL_BILL: "0xB3C9506462D66ee14D8d9516bC86Edf8DA07894B",
-  REIMBURSEMENT: "0x3AB2f521feb2ba4fd8869E220039b14932AeA145",
+  // 最新部署的合约地址 (当前Ganache网络部署)
+  GOVSTABLE: "0x3857A886a5188661A2F2Bc6d2bD0AF162f6e4966",
+  INSURANCE_REGISTRY: "0x21ebdfc19C40f4f9f0899AbdE019802D8A5A606e",
+  HOSPITAL_BILL: "0xC7038744B1e056984d216200462A20F863F96AD9",
+  REIMBURSEMENT: "0x9085B16740d924b525132efC19390B438A846702",
 };
 
 // GovStable合约ABI
@@ -27,6 +27,9 @@ export const HOSPITAL_BILL_ABI = [
   "function getBill(uint256 billId) view returns (tuple(address citizen, uint256 serviceCode, uint256 amount, bytes32 docHash, uint8 status))",
   "function markReimbursed(uint256 billId)",
   "function markRejected(uint256 billId)",
+  "function getBillCount() view returns (uint256)",
+  "function getBillsByStatus(uint8 status) view returns (uint256[])",
+  "function getAllBills() view returns (uint256[])",
   "function hasRole(bytes32 role, address account) view returns (bool)",
   "event BillSubmitted(uint256 billId, address indexed citizen, uint256 amount)",
   "event BillStatusChanged(uint256 billId, uint8 newStatus)"
@@ -51,6 +54,7 @@ export const INSURANCE_REGISTRY_ABI = [
 // ReimbursementContract合约ABI
 export const REIMBURSEMENT_ABI = [
   "function processReimbursement(uint256 billId)",
+  "function rejectReimbursement(uint256 billId, string memory reason)",
   "function registry() view returns (address)",
   "function billContract() view returns (address)",
   "function token() view returns (address)",

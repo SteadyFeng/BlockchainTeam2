@@ -11,5 +11,8 @@
   "license": "ISC",
   "devDependencies": {
     "@openzeppelin/contracts": "^4.9.0"
+  },
+  "dependencies": {
+    "web3": "^4.16.0"
   }
 }
