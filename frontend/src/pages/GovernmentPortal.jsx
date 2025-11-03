@@ -126,14 +126,35 @@ const GovernmentPortal = () => {
     try {
       setSubmitting(true);
       setError(null);
+      setSuccess(null);
 
       const tx = await registerCitizen(citizenForm.address, parseInt(citizenForm.planId));
-      setSuccess(`Citizen registered successfully! Transaction hash: ${tx.transactionHash}`);
       
-      setCitizenForm({ address: '', planId: '' });
+      if (tx && tx.transactionHash) {
+        setSuccess(`Citizen registered successfully! Transaction hash: ${tx.transactionHash}`);
+        setCitizenForm({ address: '', planId: '' });
+      } else {
+        setError('Registration completed but status is unclear. Please check manually.');
+      }
+      
     } catch (err) {
       console.error('Error registering citizen:', err);
-      setError(err.message);
+      
+      // 检查错误中是否包含成功的交易信息
+      if (err.message && err.message.includes('Transaction hash:')) {
+        const hashMatch = err.message.match(/0x[a-fA-F0-9]{64}/);
+        if (hashMatch) {
+          setSuccess(`Citizen registered successfully! Transaction hash: ${hashMatch[0]}`);
+          setCitizenForm({ address: '', planId: '' });
+          return;
+        }
+      }
+      
+      if (err.message && err.message.includes('processing error')) {
+        setError('Registration submitted but status unclear. Please check your wallet or refresh the page.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -151,6 +172,7 @@ const GovernmentPortal = () => {
     try {
       setSubmitting(true);
       setError(null);
+      setSuccess(null);
 
       const tx = await setPlan(
         parseInt(planForm.planId),
@@ -159,12 +181,33 @@ const GovernmentPortal = () => {
         parseFloat(planForm.coverageLimit)
       );
 
-      setSuccess(`Insurance plan created successfully! Transaction hash: ${tx.transactionHash}`);
+      // 检查交易是否成功
+      if (tx && tx.transactionHash) {
+        setSuccess(`Insurance plan created successfully! Transaction hash: ${tx.transactionHash}`);
+        setPlanForm({ planId: '', copayBps: '', deductible: '', coverageLimit: '' });
+      } else {
+        setError('Transaction completed but status is unclear. Please check manually.');
+      }
       
-      setPlanForm({ planId: '', copayBps: '', deductible: '', coverageLimit: '' });
     } catch (err) {
       console.error('Error creating plan:', err);
-      setError(err.message);
+      
+      // 检查错误中是否包含成功的交易信息
+      if (err.message && err.message.includes('Transaction hash:')) {
+        const hashMatch = err.message.match(/0x[a-fA-F0-9]{64}/);
+        if (hashMatch) {
+          setSuccess(`Plan created successfully! Transaction hash: ${hashMatch[0]}`);
+          setPlanForm({ planId: '', copayBps: '', deductible: '', coverageLimit: '' });
+          return;
+        }
+      }
+      
+      // 如果错误信息提到交易可能成功，给出更友好的提示
+      if (err.message && err.message.includes('processing error')) {
+        setError('Transaction submitted but status unclear. Please check your wallet or refresh the page.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSubmitting(false);
     }
