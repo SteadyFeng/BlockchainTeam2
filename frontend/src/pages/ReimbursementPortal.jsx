@@ -122,7 +122,16 @@ const ReimbursementPortal = () => {
     try {
       setError(null);
       const bill = await getBill(parseInt(id));
-      setBillDetails({ id: parseInt(id), ...bill });
+      // 规范化合约返回的 BigNumber 字段，避免渲染时出现 NaN/空值
+      const normalizedBill = {
+        id: parseInt(id),
+        citizen: bill.citizen,
+        serviceCode: bill?.serviceCode?.toString ? bill.serviceCode.toString() : String(bill.serviceCode),
+        amount: bill?.amount?.toString ? bill.amount.toString() : String(bill.amount),
+        docHash: bill.docHash,
+        status: parseInt(bill?.status?.toString ? bill.status.toString() : bill.status)
+      };
+      setBillDetails(normalizedBill);
 
       // 获取公民保险信息
       try {
