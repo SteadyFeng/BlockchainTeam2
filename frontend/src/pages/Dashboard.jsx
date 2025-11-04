@@ -31,7 +31,10 @@ import {
   getTotalPaid, 
   hasRole, 
   formatAddress, 
-  formatAmount 
+  formatAmount,
+  getAllBills,
+  getBillsDetails,
+  listenToEvents
 } from '../utils/web3';
 import { ROLES, BILL_STATUS, BILL_STATUS_COLORS } from '../utils/contracts';
 
@@ -47,6 +50,9 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // 市民账单列表状态
+  const [citizenBills, setCitizenBills] = useState([]);
+  const [loadingBills, setLoadingBills] = useState(false);
 
   // 加载用户信息
   const loadUserInfo = async () => {
@@ -88,13 +94,55 @@ const Dashboard = () => {
     } catch (err) {
       console.error('Error loading user info:', err);
       setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+  };
+
+  // 加载当前账户的账单列表（仅市民）
+  const fetchCitizenBills = async () => {
+    if (!isConnected || !account) return;
+    try {
+      setLoadingBills(true);
+      setError(null);
+      const allBillIds = await getAllBills();
+      if (allBillIds.length === 0) {
+        setCitizenBills([]);
+        return;
+      }
+      const billsDetails = await getBillsDetails(allBillIds);
+      const myBills = billsDetails.filter(b => (b.citizen || '').toLowerCase() === account.toLowerCase());
+      setCitizenBills(myBills);
+    } catch (err) {
+      console.error('Error fetching citizen bills:', err);
+      setError('Failed to load your bills');
+      setCitizenBills([]);
     } finally {
-      setLoading(false);
+      setLoadingBills(false);
     }
   };
 
   useEffect(() => {
     loadUserInfo();
+    // 加载市民账单列表
+    fetchCitizenBills();
+  }, [isConnected, account]);
+
+  // 监听账单相关事件，自动刷新列表
+  useEffect(() => {
+    if (!isConnected) return;
+    const cleanupSubmitted = listenToEvents('HOSPITAL_BILL', 'BillSubmitted', (billId, citizen, amount) => {
+      if ((citizen || '').toLowerCase() === account.toLowerCase()) {
+        fetchCitizenBills();
+      }
+    });
+    const cleanupStatusChanged = listenToEvents('HOSPITAL_BILL', 'BillStatusChanged', () => {
+      fetchCitizenBills();
+    });
+    return () => {
+      cleanupSubmitted();
+      cleanupStatusChanged();
+    };
   }, [isConnected, account]);
 
   const handleRefresh = async () => {
@@ -207,11 +255,75 @@ const Dashboard = () => {
               </Box>
             </CardContent>
           </Card>
+      </Grid>
+    </Grid>
+
+    {/* Citizen Bills */}
+    {(!userInfo.isGovernment && !userInfo.isHospital && !userInfo.isReimbursementAdmin) && (
+      <Grid container spacing={3} mt={1}>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6" gutterBottom>
+                  My Medical Bills
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<Refresh />} 
+                  onClick={fetchCitizenBills}
+                  disabled={loadingBills}
+                >
+                  {loadingBills ? 'Loading...' : 'Refresh'}
+                </Button>
+              </Box>
+
+              {loadingBills ? (
+                <Box display="flex" justifyContent="center" p={3}>
+                  <CircularProgress />
+                </Box>
+              ) : citizenBills.length > 0 ? (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Bill ID</TableCell>
+                        <TableCell>Service Code</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {citizenBills.map((bill) => (
+                        <TableRow key={bill.id} hover>
+                          <TableCell>#{bill.id}</TableCell>
+                          <TableCell>{bill.serviceCode}</TableCell>
+                          <TableCell>{formatAmount(bill.amount / 1e18)} ETH</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={BILL_STATUS[bill.status]}
+                              color={BILL_STATUS_COLORS[bill.status]}
+                              size="small"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Alert severity="info">
+                  No bills found for your account.
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
+    )}
 
-      {/* Insurance Information */}
-      <Grid container spacing={4} mb={5}>
+    {/* Insurance Information */}
+    <Grid container spacing={4} mb={5}>
         <Grid item xs={12} lg={8}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 4 }}>
