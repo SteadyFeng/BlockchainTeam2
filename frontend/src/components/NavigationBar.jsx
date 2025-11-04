@@ -74,7 +74,10 @@ const NavigationBar = () => {
       }}>
         {/* Logo and Title */}
         <Box display="flex" alignItems="center" sx={{ flexGrow: 1 }}>
-          <LocalHospital sx={{ mr: 2, fontSize: 32 }} />
+          <LocalHospital 
+            sx={{ mr: 2, fontSize: 32, cursor: 'pointer' }} 
+            onClick={() => navigate('/')}
+          />
           <Typography variant="h5" component="div" sx={{ mr: 5, fontWeight: 600 }}>
             Medical Insurance System
           </Typography>
