@@ -399,6 +399,7 @@ const ReimbursementPortal = () => {
   }
 
   return (
+    <>
     <Box sx={{ width: '100%', px: { xs: 2, md: 4, lg: 6, xl: 8 }, mt: 4, mb: 4 }}>
       {/* Header */}
       <Box display="flex" alignItems="center" mb={4}>
@@ -421,10 +422,11 @@ const ReimbursementPortal = () => {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      {/* Row 1: Bills + Process */}
+      <Grid container spacing={3} alignItems="stretch">
         {/* Pending Bills List */}
-        <Grid item xs={12}>
-          <Card>
+        <Grid item xs={12} md={6}>
+          <Card variant="outlined" sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h6">
@@ -514,7 +516,7 @@ const ReimbursementPortal = () => {
 
         {/* Bill Lookup */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card variant="outlined" sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Process Reimbursement
@@ -610,98 +612,96 @@ const ReimbursementPortal = () => {
                   )}
                 </Box>
               )}
-            </CardContent>
-          </Card>
-        </Grid>
 
-        {/* Reimbursement Calculation */}
-        <Grid item xs={12} md={6}>
-          {citizenInfo && billDetails && (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Reimbursement Calculation
-                </Typography>
-                
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMore />}>
-                    <Typography variant="subtitle1">Insurance Plan Details</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Table size="small">
-                      <TableBody>
-                        <TableRow>
-                          <TableCell><strong>Plan ID</strong></TableCell>
-                          <TableCell>{citizenInfo.planId}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell><strong>Deductible</strong></TableCell>
-                          <TableCell>{formatAmount(citizenInfo.plan.deductible)} ETH</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell><strong>Co-pay</strong></TableCell>
-                          <TableCell>{(citizenInfo.plan.copayBps / 100).toFixed(2)}%</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell><strong>Coverage Limit</strong></TableCell>
-                          <TableCell>{formatAmount(citizenInfo.plan.coverageLimit)} ETH</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell><strong>Used Coverage</strong></TableCell>
-                          <TableCell>{formatAmount(citizenInfo.totalPaid)} ETH</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell><strong>Remaining</strong></TableCell>
-                          <TableCell>
-                            {formatAmount(
-                              Math.max(0, parseFloat(citizenInfo.plan.coverageLimit) - parseFloat(citizenInfo.totalPaid))
-                            )} ETH
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </AccordionDetails>
-                </Accordion>
-
-                <Box mt={2}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Calculation Result
+              {/* Reimbursement Calculation (merged into right card) */}
+              {citizenInfo && billDetails && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Reimbursement Calculation
                   </Typography>
                   
-                  {expectedPayout.reason ? (
-                    <Alert severity="warning">
-                      <Typography variant="body2">
-                        <strong>Reason:</strong> {expectedPayout.reason}
-                      </Typography>
-                    </Alert>
-                  ) : (
-                    <Box>
-                      <Typography variant="body2" gutterBottom>
-                        <strong>Bill Amount:</strong> {formatAmount(billDetails.amount / 1e18)} ETH
-                      </Typography>
-                      <Typography variant="body2" gutterBottom>
-                        <strong>After Deductible:</strong> {formatAmount(expectedPayout.eligible)} ETH
-                      </Typography>
-                      <Typography variant="body2" gutterBottom>
-                        <strong>Expected Payout:</strong> {formatAmount(expectedPayout.payout)} ETH
-                      </Typography>
-                      <Chip
-                        icon={<CheckCircle />}
-                        label="Eligible for Reimbursement"
-                        color="success"
-                        sx={{ mt: 1 }}
-                      />
-                    </Box>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          )}
-        </Grid>
+                  <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                      <Typography variant="subtitle1">Insurance Plan Details</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Table size="small">
+                        <TableBody>
+                          <TableRow>
+                            <TableCell><strong>Plan ID</strong></TableCell>
+                            <TableCell>{citizenInfo.planId}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>Deductible</strong></TableCell>
+                            <TableCell>{formatAmount(citizenInfo.plan.deductible)} ETH</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>Co-pay</strong></TableCell>
+                            <TableCell>{(citizenInfo.plan.copayBps / 100).toFixed(2)}%</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>Coverage Limit</strong></TableCell>
+                            <TableCell>{formatAmount(citizenInfo.plan.coverageLimit)} ETH</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>Used Coverage</strong></TableCell>
+                            <TableCell>{formatAmount(citizenInfo.totalPaid)} ETH</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell><strong>Remaining</strong></TableCell>
+                            <TableCell>
+                              {formatAmount(
+                                Math.max(0, parseFloat(citizenInfo.plan.coverageLimit) - parseFloat(citizenInfo.totalPaid))
+                              )} ETH
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </AccordionDetails>
+                  </Accordion>
 
-        {/* Recent Activity */}
+                  <Box mt={2}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Calculation Result
+                    </Typography>
+                    
+                    {expectedPayout.reason ? (
+                      <Alert severity="warning">
+                        <Typography variant="body2">
+                          <strong>Reason:</strong> {expectedPayout.reason}
+                        </Typography>
+                      </Alert>
+                    ) : (
+                      <Box>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Bill Amount:</strong> {formatAmount(billDetails.amount / 1e18)} ETH
+                        </Typography>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>After Deductible:</strong> {formatAmount(expectedPayout.eligible)} ETH
+                        </Typography>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Expected Payout:</strong> {formatAmount(expectedPayout.payout)} ETH
+                        </Typography>
+                        <Chip
+                          icon={<CheckCircle />}
+                          label="Eligible for Reimbursement"
+                          color="success"
+                          sx={{ mt: 1 }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+         </Grid>
+      </Grid>
+
+      {/* Row 2: Recent Activity full width */}
+      <Grid container spacing={3} sx={{ mt: { xs: 3, sm: 4 } }}>
         <Grid item xs={12}>
-          <Card>
+          <Card variant="outlined">
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Recent Reimbursement Activity
@@ -754,53 +754,54 @@ const ReimbursementPortal = () => {
         </Grid>
       </Grid>
 
-      {/* Reject Reimbursement Dialog */}
-      <Dialog 
-        open={rejectDialogOpen} 
-        onClose={() => setRejectDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Reject Reimbursement</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Please provide a reason for rejecting this reimbursement request:
-          </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Rejection Reason"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="Enter the reason for rejection..."
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={() => {
-              setRejectDialogOpen(false);
-              setRejectReason('');
-            }}
-            disabled={processing}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleRejectReimbursement}
-            variant="contained"
-            color="error"
-            disabled={processing || !rejectReason.trim()}
-            startIcon={processing ? <CircularProgress size={20} /> : <Cancel />}
-          >
-            {processing ? 'Rejecting...' : 'Reject Bill'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
+    {/* Reject Reimbursement Dialog */}
+    <Dialog 
+      open={rejectDialogOpen} 
+      onClose={() => setRejectDialogOpen(false)}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle>Reject Reimbursement</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Please provide a reason for rejecting this reimbursement request:
+        </Typography>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Rejection Reason"
+          fullWidth
+          multiline
+          rows={3}
+          variant="outlined"
+          value={rejectReason}
+          onChange={(e) => setRejectReason(e.target.value)}
+          placeholder="Enter the reason for rejection..."
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button 
+          onClick={() => {
+            setRejectDialogOpen(false);
+            setRejectReason('');
+          }}
+          disabled={processing}
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleRejectReimbursement}
+          variant="contained"
+          color="error"
+          disabled={processing || !rejectReason.trim()}
+          startIcon={processing ? <CircularProgress size={20} /> : <Cancel />}
+        >
+          {processing ? 'Rejecting...' : 'Reject Bill'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 };
 
