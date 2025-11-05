@@ -358,70 +358,76 @@ const GovernmentPortal = () => {
 
         {/* Register Citizens Tab */}
         <TabPanel value={tabValue} index={0}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                Register Citizen for Insurance
-              </Typography>
-              
-              <Box component="form" onSubmit={handleRegisterCitizen}>
-                <TextField
-                  fullWidth
-                  label="Citizen Address"
-                  placeholder="0x..."
-                  value={citizenForm.address}
-                  onChange={(e) => setCitizenForm({...citizenForm, address: e.target.value})}
-                  margin="normal"
-                  required
-                />
-                
-                <TextField
-                  fullWidth
-                  label="Plan ID"
-                  type="number"
-                  value={citizenForm.planId}
-                  onChange={(e) => setCitizenForm({...citizenForm, planId: e.target.value})}
-                  margin="normal"
-                  required
-                  helperText="Enter the insurance plan ID (must exist)"
-                />
-                
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  disabled={submitting}
-                  sx={{ mt: 2 }}
-                  fullWidth
-                >
-                  {submitting ? 'Registering...' : 'Register Citizen'}
-                </Button>
-              </Box>
+          <Grid container spacing={3} alignItems="stretch">
+            <Grid item xs={12} sm={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Register Citizen for Insurance
+                  </Typography>
+                  <Box component="form" onSubmit={handleRegisterCitizen}>
+                    <TextField
+                      fullWidth
+                      label="Citizen Address"
+                      placeholder="0x..."
+                      value={citizenForm.address}
+                      onChange={(e) => setCitizenForm({...citizenForm, address: e.target.value})}
+                      margin="normal"
+                      required
+                    />
+                    <TextField
+                      fullWidth
+                      label="Plan ID"
+                      type="number"
+                      value={citizenForm.planId}
+                      onChange={(e) => setCitizenForm({...citizenForm, planId: e.target.value})}
+                      margin="normal"
+                      required
+                      helperText="Enter the insurance plan ID (must exist)"
+                    />
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      size="large"
+                      disabled={submitting}
+                      sx={{ mt: 2 }}
+                      fullWidth
+                    >
+                      {submitting ? 'Registering...' : 'Register Citizen'}
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                Instructions
-              </Typography>
-              <Alert severity="info">
-                <Typography variant="body2">
-                  Register citizens for insurance coverage by providing their Ethereum address and 
-                  assigning them to an existing insurance plan.
-                </Typography>
-              </Alert>
+            <Grid item xs={12} sm={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Instructions
+                  </Typography>
+                  <Alert severity="info">
+                    <Typography variant="body2">
+                      Register citizens for insurance coverage by providing their Ethereum address and 
+                      assigning them to an existing insurance plan.
+                    </Typography>
+                  </Alert>
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         </TabPanel>
 
         {/* Manage Plans Tab */}
         <TabPanel value={tabValue} index={1}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                Create Insurance Plan
-              </Typography>
-              
-              <Box component="form" onSubmit={handleCreatePlan}>
+          <Grid container spacing={3} alignItems="stretch">
+            <Grid item xs={12} sm={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Create Insurance Plan
+                  </Typography>
+                  
+                  <Box component="form" onSubmit={handleCreatePlan}>
                 <TextField
                   fullWidth
                   label="Plan ID"
@@ -478,46 +484,54 @@ const GovernmentPortal = () => {
                 >
                   {submitting ? 'Creating...' : 'Create Plan'}
                 </Button>
-              </Box>
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
             
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                Plan Configuration Guide
-              </Typography>
-              <Alert severity="info">
-                <Typography variant="body2" paragraph>
-                  <strong>Co-pay:</strong> Percentage patient pays (in basis points)
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  <strong>Deductible:</strong> Amount patient pays before coverage starts
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Coverage Limit:</strong> Maximum total coverage per citizen
-                </Typography>
-              </Alert>
-              
-              <Typography variant="subtitle2" sx={{ mt: 2 }} gutterBottom>
-                Example Plans:
-              </Typography>
-              <ul>
-                <li><Typography variant="body2">Basic: 2000 bps (20% co-pay), 0.1 ETH deductible, 5 ETH limit</Typography></li>
-                <li><Typography variant="body2">Standard: 1000 bps (10% co-pay), 0.05 ETH deductible, 10 ETH limit</Typography></li>
-                <li><Typography variant="body2">Premium: 500 bps (5% co-pay), 0.01 ETH deductible, 50 ETH limit</Typography></li>
-              </ul>
+            <Grid item xs={12} sm={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Plan Configuration Guide
+                  </Typography>
+                  <Alert severity="info">
+                    <Typography variant="body2" paragraph>
+                      <strong>Co-pay:</strong> Percentage patient pays (in basis points)
+                    </Typography>
+                    <Typography variant="body2" paragraph>
+                      <strong>Deductible:</strong> Amount patient pays before coverage starts
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Coverage Limit:</strong> Maximum total coverage per citizen
+                    </Typography>
+                  </Alert>
+                  
+                  <Typography variant="subtitle2" sx={{ mt: 2 }} gutterBottom>
+                    Example Plans:
+                  </Typography>
+                  <ul>
+                    <li><Typography variant="body2">Basic: 2000 bps (20% co-pay), 0.1 ETH deductible, 5 ETH limit</Typography></li>
+                    <li><Typography variant="body2">Standard: 1000 bps (10% co-pay), 0.05 ETH deductible, 10 ETH limit</Typography></li>
+                    <li><Typography variant="body2">Premium: 500 bps (5% co-pay), 0.01 ETH deductible, 50 ETH limit</Typography></li>
+                  </ul>
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         </TabPanel>
 
         {/* Query Citizens Tab */}
         <TabPanel value={tabValue} index={2}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                Query Citizen Information
-              </Typography>
-              
-              <Box component="form" onSubmit={handleQueryCitizen}>
+          <Grid container spacing={3} alignItems="stretch">
+            <Grid item xs={12} sm={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Query Citizen Information
+                  </Typography>
+                  
+                  <Box component="form" onSubmit={handleQueryCitizen}>
                 <TextField
                   fullWidth
                   label="Citizen Address"
@@ -538,10 +552,12 @@ const GovernmentPortal = () => {
                 >
                   {submitting ? 'Querying...' : 'Query Citizen'}
                 </Button>
-              </Box>
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
             
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} sm={6}>
               {citizenInfo && (
                 <Card variant="outlined">
                   <CardContent>
@@ -606,13 +622,15 @@ const GovernmentPortal = () => {
 
         {/* Terminate Citizens Tab */}
         <TabPanel value={tabValue} index={3}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                Terminate Citizen Insurance
-              </Typography>
-              
-              <Box component="form" onSubmit={handleTerminateCitizen}>
+          <Grid container spacing={3} alignItems="stretch">
+            <Grid item xs={12} sm={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Terminate Citizen Insurance
+                  </Typography>
+                  
+                  <Box component="form" onSubmit={handleTerminateCitizen}>
                 <TextField
                   fullWidth
                   label="Citizen Address"
@@ -633,18 +651,24 @@ const GovernmentPortal = () => {
                 >
                   {submitting ? 'Terminating...' : 'Terminate Citizen'}
                 </Button>
-              </Box>
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
             
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                Notes
-              </Typography>
-              <Alert severity="info">
-                <Typography variant="body2">
-                  Termination does not delete historical data; it logically disables the citizen’s insurance. Frontend updates reflect the status via events.
-                </Typography>
-              </Alert>
+            <Grid item xs={12} sm={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Notes
+                  </Typography>
+                  <Alert severity="info">
+                    <Typography variant="body2">
+                      Termination does not delete historical data; it logically disables the citizen’s insurance. Frontend updates reflect the status via events.
+                    </Typography>
+                  </Alert>
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         </TabPanel>
