@@ -1,10 +1,10 @@
 // 合约ABI和地址配置
 export const CONTRACT_ADDRESSES = {
   // 最新部署的合约地址 (当前Ganache网络部署)
-  GOVSTABLE: "0x3857A886a5188661A2F2Bc6d2bD0AF162f6e4966",
-  INSURANCE_REGISTRY: "0x21ebdfc19C40f4f9f0899AbdE019802D8A5A606e",
-  HOSPITAL_BILL: "0xC7038744B1e056984d216200462A20F863F96AD9",
-  REIMBURSEMENT: "0x9085B16740d924b525132efC19390B438A846702",
+  GOVSTABLE: "0x9FCD72bb9C63Bfad0047a5020709Bbc3fe26F559",
+  INSURANCE_REGISTRY: "0xA4622b91dA6C4184031C6177b3f711acB9993277",
+  HOSPITAL_BILL: "0xd7aA85b782320A537A43971783C50a6a3E5215aa",
+  REIMBURSEMENT: "0x0ecf39eC6D8035433e02156ff6640F3C52Ea0319",
 };
 
 // GovStable合约ABI
@@ -44,11 +44,14 @@ export const INSURANCE_REGISTRY_ABI = [
   "function plans(uint256 planId) view returns (tuple(uint16 copayBps, uint256 deductible, uint256 coverageLimit))",
   "function citizenPlan(address citizen) view returns (uint256)",
   "function totalPaid(address citizen) view returns (uint256)",
+  "function terminateCitizen(address citizen)",
+  "function terminated(address citizen) view returns (bool)",
   "function hasRole(bytes32 role, address account) view returns (bool)",
   "function grantRole(bytes32 role, address account)",
   "function GOV_ROLE() view returns (bytes32)",
   "event CitizenRegistered(address indexed citizen, uint256 planId)",
-  "event PlanUpdated(uint256 planId)"
+  "event PlanUpdated(uint256 planId)",
+  "event CitizenTerminated(address indexed citizen)"
 ];
 
 // ReimbursementContract合约ABI

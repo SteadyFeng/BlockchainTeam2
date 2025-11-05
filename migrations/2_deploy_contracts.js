@@ -66,9 +66,9 @@ module.exports = async function (deployer, network, accounts) {
     await insuranceRegistry.grantRole(GOV_ROLE, accounts[1]);
     console.log(`✅ Government admin role granted: ${accounts[1]}`);
 
-    // 5.2.5 给报销合约授予政府权限（用于调用addPaid函数）
-    await insuranceRegistry.grantRole(GOV_ROLE, reimbursementContract.address);
-    console.log("✅ Reimbursement contract granted government role");
+    // 5.2.5 设置报销合约地址（用于限制 addPaid 的调用方）
+    await insuranceRegistry.setReimbursementContract(reimbursementContract.address);
+    console.log("✅ InsuranceRegistry linked to ReimbursementContract for addPaid");
 
     // 5.3 配置医院管理员权限
     const HOSPITAL_ROLE = await hospitalBillContract.HOSPITAL_ROLE();

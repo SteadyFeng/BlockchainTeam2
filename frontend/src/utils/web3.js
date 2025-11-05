@@ -237,6 +237,33 @@ export const getTotalPaid = async (citizenAddress) => {
   return ethers.formatEther(totalPaid);
 };
 
+// 终止公民保险（仅政府角色）
+export const terminateCitizen = async (citizenAddress) => {
+  try {
+    const contract = getContract('INSURANCE_REGISTRY', true);
+    const tx = await contract.terminateCitizen(citizenAddress);
+    const receipt = await tx.wait();
+
+    const result = handleTransactionReceipt(receipt);
+    if (result.status === 'success') {
+      return result;
+    } else {
+      throw new Error('Transaction failed');
+    }
+  } catch (error) {
+    if (error.message === 'Transaction failed') {
+      throw error;
+    }
+    throw new Error(handleContractError(error, 'terminate citizen'));
+  }
+};
+
+// 查询公民是否已终止
+export const isCitizenTerminated = async (citizenAddress) => {
+  const contract = getContract('INSURANCE_REGISTRY');
+  return await contract.terminated(citizenAddress);
+};
+
 // 处理报销
 export const processReimbursement = async (billId) => {
   try {

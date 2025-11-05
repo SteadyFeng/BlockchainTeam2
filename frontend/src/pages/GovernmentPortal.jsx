@@ -28,6 +28,8 @@ import {
   setPlan, 
   getPlanOf, 
   getTotalPaid,
+  terminateCitizen,
+  isCitizenTerminated,
   hasRole, 
   formatAddress, 
   formatAmount 
@@ -82,6 +84,11 @@ const GovernmentPortal = () => {
   });
 
   const [citizenInfo, setCitizenInfo] = useState(null);
+  
+  // 终止公民表单
+  const [terminateForm, setTerminateForm] = useState({
+    address: ''
+  });
 
   // 检查用户权限
   const checkPermissions = async () => {
@@ -228,17 +235,48 @@ const GovernmentPortal = () => {
 
       const planInfo = await getPlanOf(queryForm.citizenAddress);
       const totalPaid = await getTotalPaid(queryForm.citizenAddress);
+      const isTerminated = await isCitizenTerminated(queryForm.citizenAddress);
 
       setCitizenInfo({
         address: queryForm.citizenAddress,
         planId: planInfo.planId,
         plan: planInfo.plan,
-        totalPaid
+        totalPaid,
+        terminated: isTerminated
       });
     } catch (err) {
       console.error('Error querying citizen:', err);
       setError('Citizen not found or not registered');
       setCitizenInfo(null);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // 终止公民保险
+  const handleTerminateCitizen = async (e) => {
+    e.preventDefault();
+    
+    if (!terminateForm.address) {
+      setError('Please enter citizen address');
+      return;
+    }
+    
+    try {
+      setSubmitting(true);
+      setError(null);
+      setSuccess(null);
+      
+      const tx = await terminateCitizen(terminateForm.address);
+      if (tx && tx.transactionHash) {
+        setSuccess(`Citizen terminated successfully! Transaction hash: ${tx.transactionHash}`);
+        setTerminateForm({ address: '' });
+      } else {
+        setError('Transaction completed but status is unclear. Please check manually.');
+      }
+    } catch (err) {
+      console.error('Error terminating citizen:', err);
+      setError(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -314,6 +352,7 @@ const GovernmentPortal = () => {
             <Tab icon={<PersonAdd />} label="Register Citizens" />
             <Tab icon={<Settings />} label="Manage Plans" />
             <Tab icon={<Assignment />} label="Query Citizens" />
+            <Tab icon={<AccountBalance />} label="Terminate Citizens" />
           </Tabs>
         </Box>
 
@@ -538,6 +577,16 @@ const GovernmentPortal = () => {
                             <TableCell>{formatAmount(citizenInfo.totalPaid)} ETH</TableCell>
                           </TableRow>
                           <TableRow>
+                            <TableCell><strong>Status</strong></TableCell>
+                            <TableCell>
+                              {citizenInfo.terminated ? (
+                                <Chip label="Terminated" color="error" />
+                              ) : (
+                                <Chip label="Active" color="success" />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
                             <TableCell><strong>Remaining Coverage</strong></TableCell>
                             <TableCell>
                               {formatAmount(
@@ -551,6 +600,51 @@ const GovernmentPortal = () => {
                   </CardContent>
                 </Card>
               )}
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        {/* Terminate Citizens Tab */}
+        <TabPanel value={tabValue} index={3}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                Terminate Citizen Insurance
+              </Typography>
+              
+              <Box component="form" onSubmit={handleTerminateCitizen}>
+                <TextField
+                  fullWidth
+                  label="Citizen Address"
+                  placeholder="0x..."
+                  value={terminateForm.address}
+                  onChange={(e) => setTerminateForm({ address: e.target.value })}
+                  margin="normal"
+                  required
+                />
+                
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={submitting}
+                  sx={{ mt: 2 }}
+                  fullWidth
+                >
+                  {submitting ? 'Terminating...' : 'Terminate Citizen'}
+                </Button>
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                Notes
+              </Typography>
+              <Alert severity="info">
+                <Typography variant="body2">
+                  Termination does not delete historical data; it logically disables the citizen’s insurance. Frontend updates reflect the status via events.
+                </Typography>
+              </Alert>
             </Grid>
           </Grid>
         </TabPanel>
