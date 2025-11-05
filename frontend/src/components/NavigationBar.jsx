@@ -8,7 +8,8 @@ import {
   Chip,
   IconButton,
   Menu,
-  MenuItem
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import { 
   LocalHospital, 
@@ -19,13 +20,20 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWeb3 } from '../contexts/Web3Context';
-import { formatAddress, formatAmount } from '../utils/web3';
+import { formatAddress, formatAmount, hasRole } from '../utils/web3';
+import { ROLES } from '../utils/contracts';
 
 const NavigationBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isConnected, account, balance, tokenBalance, connectWallet } = useWeb3();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [roles, setRoles] = React.useState({
+    isHospital: false,
+    isGovernment: false,
+    isReimbursementAdmin: false,
+    loadingRoles: false
+  });
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -34,6 +42,46 @@ const NavigationBar = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  // 加载用户角色，用于禁用导航按钮
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadRoles = async () => {
+      if (!isConnected || !account) {
+        setRoles({
+          isHospital: false,
+          isGovernment: false,
+          isReimbursementAdmin: false,
+          loadingRoles: false
+        });
+        return;
+      }
+      try {
+        setRoles((prev) => ({ ...prev, loadingRoles: true }));
+        const [isHospitalRes, isGovernmentRes, isReimbursementRes] = await Promise.allSettled([
+          hasRole('HOSPITAL_BILL', ROLES.HOSPITAL_ROLE, account),
+          hasRole('INSURANCE_REGISTRY', ROLES.GOV_ROLE, account),
+          hasRole('REIMBURSEMENT', ROLES.DEFAULT_ADMIN_ROLE, account)
+        ]);
+
+        if (!cancelled) {
+          setRoles({
+            isHospital: isHospitalRes.status === 'fulfilled' ? isHospitalRes.value : false,
+            isGovernment: isGovernmentRes.status === 'fulfilled' ? isGovernmentRes.value : false,
+            isReimbursementAdmin: isReimbursementRes.status === 'fulfilled' ? isReimbursementRes.value : false,
+            loadingRoles: false
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setRoles((prev) => ({ ...prev, loadingRoles: false }));
+        }
+      }
+    };
+
+    loadRoles();
+    return () => { cancelled = true; };
+  }, [isConnected, account]);
 
   const menuItems = [
     { 
@@ -57,6 +105,34 @@ const NavigationBar = () => {
       icon: <MonetizationOn /> 
     }
   ];
+
+  const canAccess = (path) => {
+    switch (path) {
+      case '/dashboard':
+        return true;
+      case '/hospital':
+        return roles.isHospital;
+      case '/government':
+        return roles.isGovernment;
+      case '/reimbursement':
+        return roles.isReimbursementAdmin;
+      default:
+        return true;
+    }
+  };
+
+  const tooltipFor = (path) => {
+    switch (path) {
+      case '/hospital':
+        return 'Access denied. You need hospital role to access this portal.';
+      case '/government':
+        return 'Access denied. You need government role to access this portal.';
+      case '/reimbursement':
+        return 'Access denied. You need reimbursement admin role to access this portal.';
+      default:
+        return '';
+    }
+  };
 
   return (
     <AppBar 
@@ -85,30 +161,48 @@ const NavigationBar = () => {
           {/* Navigation Buttons */}
           {isConnected && (
             <Box display="flex" gap={2}>
-              {menuItems.map((item) => (
-                <Button
-                  key={item.path}
-                  color="inherit"
-                  onClick={() => navigate(item.path)}
-                  startIcon={item.icon}
-                  sx={{
-                    px: 3,
-                    py: 1.5,
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    borderRadius: 2,
-                    backgroundColor: location.pathname === item.path ? 'rgba(255,255,255,0.25)' : 'transparent',
-                    backdropFilter: location.pathname === item.path ? 'blur(10px)' : 'none',
-                    border: location.pathname === item.path ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.15)',
-                      backdropFilter: 'blur(10px)',
-                    }
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
+              {menuItems.map((item) => {
+                const enabled = canAccess(item.path);
+                const buttonEl = (
+                  <Button
+                    color="inherit"
+                    disabled={!enabled}
+                    onClick={() => enabled && navigate(item.path)}
+                    startIcon={item.icon}
+                    sx={{
+                      px: 3,
+                      py: 1.5,
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                      borderRadius: 2,
+                      backgroundColor: location.pathname === item.path ? 'rgba(255,255,255,0.25)' : 'transparent',
+                      backdropFilter: location.pathname === item.path ? 'blur(10px)' : 'none',
+                      border: location.pathname === item.path ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+                      opacity: enabled ? 1 : 0.6,
+                      cursor: enabled ? 'pointer' : 'not-allowed',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.15)',
+                        backdropFilter: 'blur(10px)',
+                      }
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                );
+
+                if (enabled || item.path === '/dashboard') {
+                  return (
+                    <React.Fragment key={item.path}>
+                      {buttonEl}
+                    </React.Fragment>
+                  );
+                }
+                return (
+                  <Tooltip title={tooltipFor(item.path)} arrow disableInteractive key={item.path}>
+                    <span>{buttonEl}</span>
+                  </Tooltip>
+                );
+              })}
             </Box>
           )}
         </Box>
