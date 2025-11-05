@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import HospitalPortal from './pages/HospitalPortal';
 import GovernmentPortal from './pages/GovernmentPortal';
 import ReimbursementPortal from './pages/ReimbursementPortal';
+import UserGuide from './components/UserGuide';
 
 // 创建桌面端优化主题
 const theme = createTheme({
@@ -178,6 +179,9 @@ function App() {
               {/* 仪表板 */}
               <Route path="/dashboard" element={<Dashboard />} />
               
+              {/* 使用指南 */}
+              <Route path="/guide" element={<UserGuide />} />
+
               {/* 医院门户 */}
               <Route path="/hospital" element={<HospitalPortal />} />
               

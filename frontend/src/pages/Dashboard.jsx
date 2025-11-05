@@ -23,7 +23,8 @@ import {
   AccountBalance,
   MonetizationOn,
   Assignment,
-  Refresh
+  Refresh,
+  CheckCircle
 } from '@mui/icons-material';
 import { useWeb3 } from '../contexts/Web3Context';
 import { 
@@ -39,7 +40,7 @@ import {
 import { ROLES, BILL_STATUS, BILL_STATUS_COLORS } from '../utils/contracts';
 
 const Dashboard = () => {
-  const { isConnected, account, updateBalances } = useWeb3();
+  const { isConnected, account, balance, tokenBalance, updateBalances } = useWeb3();
   const [userInfo, setUserInfo] = useState({
     isHospital: false,
     isGovernment: false,
@@ -170,7 +171,7 @@ const Dashboard = () => {
   }
 
   return (
-    <Box sx={{ width: '100%', px: { xs: 2, md: 4, lg: 6, xl: 8 }, mt: 3, mb: 6 }}>
+    <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
       {/* Header */}
       <Box 
         display="flex" 
@@ -178,18 +179,19 @@ const Dashboard = () => {
         alignItems="center" 
         mb={4}
         sx={{
-          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+          mt: 1,
+          background: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)',
           color: 'white',
-          p: 4,
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(25,118,210,0.3)',
+          p: { xs: 2, md: 3 },
+          borderRadius: 2,
+          boxShadow: '0 6px 20px rgba(25,118,210,0.2)',
         }}
       >
         <Box>
-          <Typography variant="h3" component="h1" sx={{ fontWeight: 700, mb: 1 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 0.5 }}>
             Dashboard
           </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400 }}>
+          <Typography variant="body1" sx={{ opacity: 0.9, fontWeight: 400 }}>
             Medical Insurance System Overview
           </Typography>
         </Box>
@@ -215,11 +217,52 @@ const Dashboard = () => {
         </Alert>
       )}
 
+      {/* Overview Metrics */}
+      <Grid container spacing={2} mb={3} justifyContent="center">
+        <Grid item xs={12} md={3}>
+          <Card elevation={2} sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' } }}>
+            <CardContent sx={{ p: 2, textAlign: 'center' }}>
+              <Box display="flex" justifyContent="center" alignItems="center" gap={1} mb={0.5}>
+                <AccountBalance fontSize="small" color="primary" />
+                <Typography variant="subtitle2" color="text.secondary">ETH Balance</Typography>
+              </Box>
+              <Typography variant="h6">{formatAmount(balance)} ETH</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Card elevation={2} sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' } }}>
+            <CardContent sx={{ p: 2, textAlign: 'center' }}>
+              <Box display="flex" justifyContent="center" alignItems="center" gap={1} mb={0.5}>
+                <MonetizationOn fontSize="small" color="success" />
+                <Typography variant="subtitle2" color="text.secondary">GovStable Balance</Typography>
+              </Box>
+              <Typography variant="h6">{formatAmount(tokenBalance)} GOVS</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Card elevation={2} sx={{ transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' } }}>
+            <CardContent sx={{ p: 2, textAlign: 'center' }}>
+              <Box display="flex" justifyContent="center" alignItems="center" gap={1} mb={0.5}>
+                <Assignment fontSize="small" color={userInfo.hasInsurance ? 'success' : 'disabled'} />
+                <Typography variant="subtitle2" color="text.secondary">Insurance Status</Typography>
+              </Box>
+              <Chip 
+                label={userInfo.hasInsurance ? "Registered" : "Not Registered"} 
+                color={userInfo.hasInsurance ? "success" : "default"}
+                size="small"
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       {/* User Roles */}
-      <Grid container spacing={4} mb={5}>
-        <Grid item xs={12}>
-          <Card sx={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }}>
-            <CardContent sx={{ p: 4 }}>
+      <Grid container spacing={4} mb={4} justifyContent="center">
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
               <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
                 Account Roles & Permissions
               </Typography>
@@ -257,14 +300,13 @@ const Dashboard = () => {
           </Card>
       </Grid>
     </Grid>
-
-    {/* Citizen Bills */}
-    {(!userInfo.isGovernment && !userInfo.isHospital && !userInfo.isReimbursementAdmin) && (
-      <Grid container spacing={3} mt={1}>
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+    {/* Row 1: Bills + Quick Actions */}
+    <Grid container spacing={4} alignItems="stretch" mb={4} justifyContent="center">
+      {(!userInfo.isGovernment && !userInfo.isHospital && !userInfo.isReimbursementAdmin) && (
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} gap={2}>
                 <Typography variant="h6" gutterBottom>
                   My Medical Bills
                 </Typography>
@@ -284,18 +326,18 @@ const Dashboard = () => {
                 </Box>
               ) : citizenBills.length > 0 ? (
                 <TableContainer component={Paper} variant="outlined">
-                  <Table>
-                    <TableHead>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: 'grey.100' }}>
                       <TableRow>
-                        <TableCell>Bill ID</TableCell>
-                        <TableCell>Service Code</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Bill ID</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Service Code</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Amount</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {citizenBills.map((bill) => (
-                        <TableRow key={bill.id} hover>
+                        <TableRow key={bill.id} hover sx={{ '&:hover': { bgcolor: 'grey.50' } }}>
                           <TableCell>#{bill.id}</TableCell>
                           <TableCell>{bill.serviceCode}</TableCell>
                           <TableCell>{formatAmount(bill.amount / 1e18)} ETH</TableCell>
@@ -319,120 +361,144 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
-    )}
+      )}
 
-    {/* Insurance Information */}
-    <Grid container spacing={4} mb={5}>
-        <Grid item xs={12} lg={8}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
-                Insurance Coverage Details
-              </Typography>
-              {userInfo.hasInsurance ? (
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Plan ID: {userInfo.planInfo.planId}
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Deductible:</strong> {formatAmount(userInfo.planInfo.plan.deductible)} ETH
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Co-pay:</strong> {(userInfo.planInfo.plan.copayBps / 100).toFixed(2)}%
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Coverage Limit:</strong> {formatAmount(userInfo.planInfo.plan.coverageLimit)} ETH
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Used Amount:</strong> {formatAmount(userInfo.totalPaid)} ETH
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Remaining:</strong> {formatAmount(
-                      Math.max(0, parseFloat(userInfo.planInfo.plan.coverageLimit) - parseFloat(userInfo.totalPaid))
-                    )} ETH
-                  </Typography>
-                </Box>
-              ) : (
+      <Grid item xs={12} md={6}>
+        <Card sx={{ height: '100%' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+              Quick Actions
+            </Typography>
+            <Box display="flex" flexDirection="column" gap={2}>
+              {/* Basic Actions */}
+              <Typography variant="subtitle2" color="text.secondary">Basic Actions</Typography>
+              <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh} fullWidth>
+                Refresh Data
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={() => navigator.clipboard?.writeText(account)}
+                fullWidth
+              >
+                Copy Account Address
+              </Button>
+              <Button variant="text" href="/guide" fullWidth>
+                View User Guide
+              </Button>
+              <Box sx={{ my: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">Role-Specific Actions</Typography>
+              </Box>
+
+              {userInfo.isHospital && (
+                <Button
+                  variant="contained"
+                  startIcon={<LocalHospital />}
+                  href="/hospital"
+                  fullWidth
+                >
+                  Submit Medical Bill
+                </Button>
+              )}
+              {userInfo.isGovernment && (
+                <Button
+                  variant="contained"
+                  startIcon={<AccountBalance />}
+                  href="/government"
+                  fullWidth
+                >
+                  Government Portal
+                </Button>
+              )}
+              {userInfo.isReimbursementAdmin && (
+                <Button
+                  variant="contained"
+                  startIcon={<MonetizationOn />}
+                  href="/reimbursement"
+                  fullWidth
+                >
+                  Process Reimbursements
+                </Button>
+              )}
+              {!userInfo.isHospital && !userInfo.isGovernment && !userInfo.isReimbursementAdmin && userInfo.hasInsurance && (
                 <Alert severity="info">
-                  No insurance coverage registered. Contact government admin to register.
+                  Your medical bills will be automatically processed for reimbursement when submitted by hospitals.
                 </Alert>
               )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} lg={4}>
-          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h5" gutterBottom sx={{ color: 'white', fontWeight: 600, mb: 3 }}>
-                Quick Actions
-              </Typography>
-              <Box display="flex" flexDirection="column" gap={3}>
-                {userInfo.isHospital && (
-                  <Button
-                    variant="contained"
-                    startIcon={<LocalHospital />}
-                    href="/hospital"
-                  >
-                    Submit Medical Bill
-                  </Button>
-                )}
-                {userInfo.isGovernment && (
-                  <Button
-                    variant="contained"
-                    startIcon={<AccountBalance />}
-                    href="/government"
-                  >
-                    Government Portal
-                  </Button>
-                )}
-                {userInfo.isReimbursementAdmin && (
-                  <Button
-                    variant="contained"
-                    startIcon={<MonetizationOn />}
-                    href="/reimbursement"
-                  >
-                    Process Reimbursements
-                  </Button>
-                )}
-                {!userInfo.isHospital && !userInfo.isGovernment && !userInfo.isReimbursementAdmin && userInfo.hasInsurance && (
-                  <Alert severity="info">
-                    Your medical bills will be automatically processed for reimbursement when submitted by hospitals.
-                  </Alert>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+            </Box>
+          </CardContent>
+        </Card>
       </Grid>
-
-      {/* Account Information */}
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Account Information
-              </Typography>
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableBody>
+    </Grid>
+    {/* Row 2: Insurance + Account */}
+    <Grid container spacing={4} alignItems="stretch" justifyContent="center">
+      <Grid item xs={12} md={6}>
+        <Card sx={{ height: '100%' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+              Insurance Coverage Details
+            </Typography>
+            {userInfo.hasInsurance ? (
+              <Box>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Plan ID: {userInfo.planInfo.planId}
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Deductible</Typography>
+                    <Typography variant="body1">{formatAmount(userInfo.planInfo.plan.deductible)} ETH</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Co-pay</Typography>
+                    <Typography variant="body1">{(userInfo.planInfo.plan.copayBps / 100).toFixed(2)}%</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Coverage Limit</Typography>
+                    <Typography variant="body1">{formatAmount(userInfo.planInfo.plan.coverageLimit)} ETH</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Used Amount</Typography>
+                    <Typography variant="body1">{formatAmount(userInfo.totalPaid)} ETH</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary">Remaining</Typography>
+                    <Typography variant="body1">{formatAmount(
+                      Math.max(0, parseFloat(userInfo.planInfo.plan.coverageLimit) - parseFloat(userInfo.totalPaid))
+                    )} ETH</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            ) : (
+              <Alert severity="info">
+                No insurance coverage registered. Contact government admin to register.
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <Card sx={{ height: '100%' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Account Information
+            </Typography>
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableBody>
                     <TableRow>
-                      <TableCell component="th" scope="row">
+                      <TableCell component="th" scope="row" align="right">
                         <strong>Account Address</strong>
                       </TableCell>
-                      <TableCell>
+                      <TableCell align="left">
                         <Typography variant="body2" fontFamily="monospace">
                           {account}
                         </Typography>
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell component="th" scope="row">
+                      <TableCell component="th" scope="row" align="right">
                         <strong>Insurance Status</strong>
                       </TableCell>
-                      <TableCell>
+                      <TableCell align="left">
                         <Chip 
                           label={userInfo.hasInsurance ? "Registered" : "Not Registered"} 
                           color={userInfo.hasInsurance ? "success" : "default"}
@@ -443,18 +509,18 @@ const Dashboard = () => {
                     {userInfo.hasInsurance && (
                       <>
                         <TableRow>
-                          <TableCell component="th" scope="row">
+                          <TableCell component="th" scope="row" align="right">
                             <strong>Total Reimbursed</strong>
                           </TableCell>
-                          <TableCell>
+                          <TableCell align="left">
                             {formatAmount(userInfo.totalPaid)} ETH
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell component="th" scope="row">
+                          <TableCell component="th" scope="row" align="right">
                             <strong>Coverage Remaining</strong>
                           </TableCell>
-                          <TableCell>
+                          <TableCell align="left">
                             {formatAmount(
                               Math.max(0, parseFloat(userInfo.planInfo.plan.coverageLimit) - parseFloat(userInfo.totalPaid))
                             )} ETH
@@ -462,14 +528,14 @@ const Dashboard = () => {
                         </TableRow>
                       </>
                     )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
       </Grid>
-    </Box>
+    </Grid>
+    </Container>
   );
 };
 
