@@ -21,7 +21,7 @@ export const GOVSTABLE_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 ];
 
-// HospitalBillContract合约ABI
+// HospitalBillContract ABI
 export const HOSPITAL_BILL_ABI = [
   "function submitBill(address citizen, uint256 serviceCode, uint256 amount, bytes32 docHash) returns (uint256)",
   "function getBill(uint256 billId) view returns (tuple(address citizen, uint256 serviceCode, uint256 amount, bytes32 docHash, uint8 status))",
