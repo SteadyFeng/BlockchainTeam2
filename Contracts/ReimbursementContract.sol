@@ -7,6 +7,8 @@ import "./InsuranceRegistry.sol";
 import "./HospitalBillContract.sol";
 
 contract ReimbursementContract is AccessControl, ReentrancyGuard {
+    bytes32 public constant REIMBURSE_ROLE = keccak256("REIMBURSE_ROLE");
+    
     InsuranceRegistry public registry;
     HospitalBillContract public billContract;
     GovStable public token;
@@ -16,12 +18,13 @@ contract ReimbursementContract is AccessControl, ReentrancyGuard {
 
     constructor(address _registry, address _billContract, address _token) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(REIMBURSE_ROLE, msg.sender);
         registry = InsuranceRegistry(_registry);
         billContract = HospitalBillContract(_billContract);
         token = GovStable(_token);
     }
 
-    function processReimbursement(uint256 billId) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
+    function processReimbursement(uint256 billId) external nonReentrant onlyRole(REIMBURSE_ROLE) {
         HospitalBillContract.Bill memory bill = billContract.getBill(billId);
         if (bill.status != HospitalBillContract.BillStatus.Submitted) {
             // 不要修改已处理账单的状态，只发出事件
@@ -69,7 +72,7 @@ contract ReimbursementContract is AccessControl, ReentrancyGuard {
         emit Reimbursed(billId, bill.citizen, payout);
     }
 
-    function rejectReimbursement(uint256 billId, string memory reason) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
+    function rejectReimbursement(uint256 billId, string memory reason) external nonReentrant onlyRole(REIMBURSE_ROLE) {
         HospitalBillContract.Bill memory bill = billContract.getBill(billId);
         if (bill.status != HospitalBillContract.BillStatus.Submitted) {
             emit Rejected(billId, bill.citizen, "Invalid status - bill not in submitted state");

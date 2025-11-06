@@ -82,7 +82,9 @@ module.exports = async function (deployer, network, accounts) {
 
     // 5.5 配置报销管理员权限
     const DEFAULT_ADMIN_ROLE = await reimbursementContract.DEFAULT_ADMIN_ROLE();
+    const REIMBURSE_ROLE_REIMBURSEMENT = await reimbursementContract.REIMBURSE_ROLE();
     await reimbursementContract.grantRole(DEFAULT_ADMIN_ROLE, accounts[3]);
+    await reimbursementContract.grantRole(REIMBURSE_ROLE_REIMBURSEMENT, accounts[3]);
     console.log(`✅ 报销管理员权限已授予: ${accounts[3]}`);
 
     // 6. 初始化代币供应
@@ -95,7 +97,7 @@ module.exports = async function (deployer, network, accounts) {
     console.log("\n🔍 验证权限设置...");
     const govRoleCheck = await insuranceRegistry.hasRole(GOV_ROLE, accounts[1]);
     const hospitalRoleCheck = await hospitalBillContract.hasRole(HOSPITAL_ROLE, accounts[2]);
-    const reimbRoleCheck = await reimbursementContract.hasRole(DEFAULT_ADMIN_ROLE, accounts[3]);
+    const reimbRoleCheck = await reimbursementContract.hasRole(REIMBURSE_ROLE_REIMBURSEMENT, accounts[3]);
     
     console.log(`  政府权限 (${accounts[1]}): ${govRoleCheck ? '✅' : '❌'}`);
     console.log(`  医院权限 (${accounts[2]}): ${hospitalRoleCheck ? '✅' : '❌'}`);

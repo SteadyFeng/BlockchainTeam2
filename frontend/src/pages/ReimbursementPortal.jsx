@@ -80,7 +80,7 @@ const ReimbursementPortal = () => {
 
     try {
       setLoading(true);
-      const adminRole = await hasRole('REIMBURSEMENT', ROLES.DEFAULT_ADMIN_ROLE, account);
+      const adminRole = await hasRole('REIMBURSEMENT', ROLES.REIMBURSE_ROLE, account);
       setIsAdmin(adminRole);
     } catch (err) {
       console.error('Error checking permissions:', err);
